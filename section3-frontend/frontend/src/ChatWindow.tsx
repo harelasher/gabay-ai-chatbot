@@ -7,9 +7,10 @@ interface Props {
   messages: Message[];
   loading: boolean;
   onSend: (text: string) => void;
+  followUpChips?: string[];
 }
 
-export default function ChatWindow({ messages, loading, onSend }: Props) {
+export default function ChatWindow({ messages, loading, onSend, followUpChips }: Props) {
   const [input, setInput] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -46,7 +47,7 @@ export default function ChatWindow({ messages, loading, onSend }: Props) {
       </div>
 
       <div className="input-area">
-        <SuggestedChips onChipClick={submit} />
+        <SuggestedChips onChipClick={submit} chips={followUpChips} />
         <form className="input-form" onSubmit={handleSubmit}>
           <input
             ref={inputRef}

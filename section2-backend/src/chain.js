@@ -80,15 +80,22 @@ function buildUserPrompt(question, chunks) {
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-async function queryRAG(question) {
+async function queryRAG(question, history = []) {
   const queryVec = await embedQuery(question);
   const chunks   = await retrieveChunks(queryVec);
+
+  // Validate and sanitise history items — only allow role + content through.
+  const safeHistory = history
+    .filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+    .slice(-6)
+    .map(m => ({ role: m.role, content: m.content }));
 
   const completion = await openai.chat.completions.create({
     model: CHAT_MODEL,
     temperature: TEMP,
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
+      ...safeHistory,
       { role: 'user',   content: buildUserPrompt(question, chunks) },
     ],
   });
@@ -108,7 +115,38 @@ async function queryRAG(question) {
   return { answer, sources };
 }
 
-module.exports = { queryRAG, pool };
+// ─── Follow-up suggestions ────────────────────────────────────────────────────
+
+async function generateFollowUps(answer, question) {
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      temperature: 0.5,
+      max_tokens: 120,
+      messages: [
+        {
+          role: 'system',
+          content: 'אתה עוזר שמייצר שאלות המשך קצרות. החזר בדיוק 2 שאלות המשך רלוונטיות בעברית שקונה דירה עשוי לשאול, בהתבסס על התשובה שניתנה. החזר JSON בלבד: ["שאלה 1", "שאלה 2"]',
+        },
+        {
+          role: 'user',
+          content: `שאלה מקורית: ${question}\nתשובה: ${answer}`,
+        },
+      ],
+    });
+
+    const raw = completion.choices[0].message.content.trim();
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.every(s => typeof s === 'string')) {
+      return parsed.slice(0, 2);
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+module.exports = { queryRAG, generateFollowUps, pool };
 
 // ─── Standalone test ──────────────────────────────────────────────────────────
 
