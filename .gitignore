@@ -1,5 +1,6 @@
 # Environment — never commit secrets
 .env
+*/.env
 
 # Node
 node_modules/
