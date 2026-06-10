@@ -3,7 +3,7 @@
  * Tests scraping quality, ingest correctness, and vector search accuracy.
  * Run: node tests.js
  */
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
@@ -37,14 +37,14 @@ async function suiteScrapedFiles() {
   console.log('\n── Suite 1: Scraped JSON files ─────────────────────────');
 
   // 1.1 Both JSON files exist
-  const gabayExists = fs.existsSync(path.join(__dirname, 'scraped_gabay.json'));
-  const defsExists  = fs.existsSync(path.join(__dirname, 'scraped_definitions.json'));
+  const gabayExists = fs.existsSync(path.join(__dirname, '..', 'scraped_gabay.json'));
+  const defsExists  = fs.existsSync(path.join(__dirname, '..', 'scraped_definitions.json'));
   assert(gabayExists,  '1.1 scraped_gabay.json exists');
   assert(defsExists,   '1.2 scraped_definitions.json exists');
   if (!gabayExists || !defsExists) return;
 
-  const gabay = JSON.parse(fs.readFileSync(path.join(__dirname, 'scraped_gabay.json'), 'utf8'));
-  const defs  = JSON.parse(fs.readFileSync(path.join(__dirname, 'scraped_definitions.json'), 'utf8'));
+  const gabay = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'scraped_gabay.json'), 'utf8'));
+  const defs  = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'scraped_definitions.json'), 'utf8'));
 
   // 1.3 Company pages: Hebrew only — no EN or FR
   const langs = new Set(gabay.map(p => p.lang));
@@ -52,9 +52,9 @@ async function suiteScrapedFiles() {
   assert(nonHe.length === 0,
     '1.3 All company pages are Hebrew (no EN or FR)', `Non-Hebrew langs found: ${nonHe.join(', ')}`);
 
-  // 1.4 Hebrew company pages scraped (up to 5 — contact page may redirect)
-  assert(gabay.length >= 4 && gabay.length <= 5,
-    `1.4 4–5 Hebrew company pages scraped`, `Got ${gabay.length}`);
+  // 1.4 At least 4 Hebrew company pages scraped
+  assert(gabay.length >= 4,
+    `1.4 ≥4 Hebrew company pages scraped`, `Got ${gabay.length}`);
 
   // 1.5 No company page is too short
   const shortPages = gabay.filter(p => p.text.length < 200);
@@ -80,8 +80,8 @@ async function suiteScrapedFiles() {
     '1.8 All 4 definition source_types present (legal/investor/association/media)',
     `Missing: ${missingTypes.join(', ')}`);
 
-  // 1.9 No definition chunk spans multiple distinct terms (each has its own `term` field or is an article)
-  const defsMissingTerm = defs.filter(d => d.source_type !== 'media' && !d.term);
+  // 1.9 No definition chunk spans multiple distinct terms (each has its own `term` field or is an article/wiki)
+  const defsMissingTerm = defs.filter(d => !['media', 'rights'].includes(d.source_type) && !d.term);
   assert(defsMissingTerm.length === 0,
     '1.9 All non-media definition entries have a term field',
     `${defsMissingTerm.length} entries missing term`);

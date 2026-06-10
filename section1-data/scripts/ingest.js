@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
@@ -141,10 +141,10 @@ async function main() {
 
   // Load scraped data
   const gabayRaw = JSON.parse(
-    fs.readFileSync(path.join(__dirname, 'scraped_gabay.json'), 'utf8')
+    fs.readFileSync(path.join(__dirname, '..', 'scraped_gabay.json'), 'utf8')
   );
   const defsRaw = JSON.parse(
-    fs.readFileSync(path.join(__dirname, 'scraped_definitions.json'), 'utf8')
+    fs.readFileSync(path.join(__dirname, '..', 'scraped_definitions.json'), 'utf8')
   );
   console.log(`Loaded ${gabayRaw.length} company pages, ${defsRaw.length} definition entries.\n`);
 

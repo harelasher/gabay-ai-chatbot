@@ -8,8 +8,8 @@
  *   ✅  Sources array contains at least one real URL
  *   ✅  Answer does NOT contain the hallucination marker phrase
  */
-require('dotenv').config();
-const { queryRAG } = require('./chain');
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+const { queryRAG } = require('../src/chain');
 const { Pool }     = require('pg');
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });

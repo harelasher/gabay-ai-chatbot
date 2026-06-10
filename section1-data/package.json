@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "Data collection scripts for Gabay AI Chatbot",
   "scripts": {
-    "scrape": "node scraper.js",
-    "ingest": "node ingest.js",
-    "verify": "node verify.js"
+    "scrape":    "node scripts/scraper.js",
+    "ingest":    "node scripts/ingest.js",
+    "verify":    "node scripts/verify.js",
+    "fix-lang":  "node scripts/fix-lang.js",
+    "test":      "node tests/tests.js"
   },
   "dependencies": {
     "axios": "^1.7.2",

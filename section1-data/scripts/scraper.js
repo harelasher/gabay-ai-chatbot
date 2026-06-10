@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const axios = require('axios');
 const cheerio = require('cheerio');
 const fs = require('fs');
@@ -22,7 +22,9 @@ const GABAY_PAGES = [
   { url: 'https://gabaygroup.com/projects/' },
   { url: 'https://gabaygroup.com/urban-renewal/' },
   { url: 'https://gabaygroup.com/about/' },
-  { url: 'https://gabaygroup.com/contact/' },
+  { url: 'https://gabaygroup.com/contact-us/' },
+  { url: 'https://gabaygroup.com/marketing-projects/' },
+  { url: 'https://gabaygroup.com/פרויקטים-מאוכלסים/' },
 ];
 
 // ─── Definition sources ───────────────────────────────────────────────────────
@@ -62,7 +64,43 @@ const DEFINITION_SOURCES = [
     lang: 'he',
     title: 'מילון מושגי נדל"ן – Nadlan Center',
     strategy: 'article',
-    selector: '.article_block p',   // actual article container on this site
+    selector: '.article_block p',
+  },
+  {
+    id: 'kolzchut_pinuy',
+    url: 'https://www.kolzchut.org.il/he/פינוי-בינוי',
+    source_type: 'rights',
+    lang: 'he',
+    title: 'פינוי-בינוי – כל זכות',
+    strategy: 'wiki_paragraphs',
+    selector: '.emphasis-item-text',
+  },
+  {
+    id: 'kolzchut_tama',
+    url: 'https://www.kolzchut.org.il/he/תמ"א_38',
+    source_type: 'rights',
+    lang: 'he',
+    title: 'תמ"א 38 – כל זכות',
+    strategy: 'wiki_paragraphs',
+    selector: '.emphasis-item-text',
+  },
+  {
+    id: 'kolzchut_tenant',
+    url: 'https://www.kolzchut.org.il/he/שאלות_ותשובות_בנושא_זכויות_דיירים_בהתחדשות_עירונית',
+    source_type: 'rights',
+    lang: 'he',
+    title: 'זכויות דיירים בהתחדשות עירונית – שאלות ותשובות – כל זכות',
+    strategy: 'wiki_paragraphs',
+    selector: '.emphasis-item-text',
+  },
+  {
+    id: 'kolzchut_refuse',
+    url: 'https://www.kolzchut.org.il/he/הזכות_לסרב_לעסקת_פינוי_בינוי',
+    source_type: 'rights',
+    lang: 'he',
+    title: 'הזכות לסרב לעסקת פינוי בינוי – כל זכות',
+    strategy: 'wiki_paragraphs',
+    selector: '.emphasis-item-text',
   },
 ];
 
@@ -230,6 +268,18 @@ function extractArticleBody($, selector, meta) {
   return [{ ...meta, term: '', text }];
 }
 
+// kolzchut (MediaWiki): each paragraph becomes its own chunk entry
+function extractWikiParagraphs($, selector, meta) {
+  const chunks = [];
+  $(selector).each((_, el) => {
+    const text = $(el).text().trim().replace(/\s+/g, ' ');
+    if (text.length >= 80) {
+      chunks.push({ ...meta, term: '', text });
+    }
+  });
+  return chunks;
+}
+
 async function scrapeDefinitionSource(source) {
   console.log(`  Scraping: ${source.url}`);
   try {
@@ -252,6 +302,8 @@ async function scrapeDefinitionSource(source) {
       chunks = extractH3Para($, meta);
     } else if (source.strategy === 'article') {
       chunks = extractArticleBody($, source.selector, meta);
+    } else if (source.strategy === 'wiki_paragraphs') {
+      chunks = extractWikiParagraphs($, source.selector, meta);
     }
 
     console.log(`    Found ${chunks.length} definition entries`);
@@ -278,7 +330,7 @@ async function main() {
   console.log(`\n→ ${gabayPages.length} company pages collected.\n`);
 
   fs.writeFileSync(
-    path.join(__dirname, 'scraped_gabay.json'),
+    path.join(__dirname, '..', 'scraped_gabay.json'),
     JSON.stringify(gabayPages, null, 2),
     'utf8'
   );
@@ -295,7 +347,7 @@ async function main() {
   console.log(`\n→ ${allDefinitions.length} definition chunks collected.\n`);
 
   fs.writeFileSync(
-    path.join(__dirname, 'scraped_definitions.json'),
+    path.join(__dirname, '..', 'scraped_definitions.json'),
     JSON.stringify(allDefinitions, null, 2),
     'utf8'
   );

@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "RAG backend for Gabay AI Chatbot",
   "scripts": {
-    "chain": "node chain.js",
-    "start": "node server.js",
-    "test": "node test.js"
+    "chain": "node src/chain.js",
+    "start": "node src/server.js",
+    "test":  "node tests/test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
