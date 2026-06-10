@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: gabay_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gabay
+      POSTGRES_PASSWORD: gabaypass
+      POSTGRES_DB: gabay_chatbot
+    ports:
+      - "5433:5432"
+    volumes:
+      # Persistent data — survives container restarts
+      - gabay_pgdata:/var/lib/postgresql/data
+      # Runs automatically on first startup (creates table + index)
+      - ./section1-data/setup.sql:/docker-entrypoint-initdb.d/01_setup.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gabay -d gabay_chatbot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  gabay_pgdata:
