@@ -5,19 +5,18 @@
  * Used by:          server.js
  */
 require('dotenv').config();
-const { Pool }    = require('pg');
-const OpenAI      = require('openai');
-const Anthropic   = require('@anthropic-ai/sdk');
+const { Pool } = require('pg');
+const OpenAI   = require('openai');
 
-const pool      = new Pool({ connectionString: process.env.DATABASE_URL });
-const openai    = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const pool   = new Pool({ connectionString: process.env.DATABASE_URL });
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const MODEL   = 'claude-sonnet-4-6';
-const K       = 5;     // chunks to retrieve
-const TEMP    = 0.2;   // factual assistant — keep low
+const EMBED_MODEL = 'text-embedding-3-small';
+const CHAT_MODEL  = 'gpt-4o';
+const K           = 5;    // chunks to retrieve
+const TEMP        = 0.2;  // factual assistant — keep low
 
-// ─── System prompt ────────────────────────────────────────────────────────────
+// ─── System prompt (Hebrew-only) ──────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `אתה עוזר מועיל של קבוצת גבאי, חברת פיתוח נדל"ן ישראלית המתמחה בהתחדשות עירונית ופרויקטים של פינוי-בינוי ותמ"א 38.
 
@@ -44,7 +43,7 @@ const SYSTEM_PROMPT = `אתה עוזר מועיל של קבוצת גבאי, חב
 
 async function embedQuery(text) {
   const res = await openai.embeddings.create({
-    model: 'text-embedding-3-small',
+    model: EMBED_MODEL,
     input: text,
     encoding_format: 'float',
   });
@@ -64,11 +63,8 @@ async function retrieveChunks(queryVector) {
 
 function buildUserPrompt(question, chunks) {
   const context = chunks
-    .map((c, i) =>
-      `[${i + 1}] מקור: ${c.source_url} (${c.source_type})\n${c.content}`
-    )
+    .map((c, i) => `[${i + 1}] מקור: ${c.source_url} (${c.source_type})\n${c.content}`)
     .join('\n\n');
-
   return `הקשר:\n\n${context}\n\n---\nשאלת המשתמש: ${question}`;
 }
 
@@ -78,21 +74,22 @@ async function queryRAG(question) {
   const queryVec = await embedQuery(question);
   const chunks   = await retrieveChunks(queryVec);
 
-  const message = await anthropic.messages.create({
-    model: MODEL,
-    max_tokens: 1024,
+  const completion = await openai.chat.completions.create({
+    model: CHAT_MODEL,
     temperature: TEMP,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: buildUserPrompt(question, chunks) }],
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user',   content: buildUserPrompt(question, chunks) },
+    ],
   });
 
-  const answer  = message.content[0].text;
+  const answer  = completion.choices[0].message.content;
   const sources = [...new Set(chunks.map(c => c.source_url))];
 
   return { answer, sources };
 }
 
-module.exports = { queryRAG };
+module.exports = { queryRAG, pool };
 
 // ─── Standalone test ──────────────────────────────────────────────────────────
 
