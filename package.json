@@ -1,0 +1,11 @@
+{
+  "name": "gabay-ai-chatbot",
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "npm --prefix section3-frontend install && npm --prefix section3-frontend/frontend install && npm --prefix section3-frontend/frontend run build",
+    "start": "node section3-frontend/server.js"
+  }
+}
