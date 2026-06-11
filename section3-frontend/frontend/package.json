@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "gabay-ai-chatbot": "file:../..",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
