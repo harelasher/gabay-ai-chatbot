@@ -4,7 +4,7 @@ const express     = require('express');
 const cors        = require('cors');
 const rateLimit   = require('express-rate-limit');
 const twilio      = require('twilio');
-const { queryRAG, generateFollowUps, pool } = require('../section2-backend/src/chain');
+const { queryRAG, generateFollowUps, pool } = require('./chain');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
